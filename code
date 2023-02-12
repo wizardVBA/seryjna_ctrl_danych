@@ -1,0 +1,107 @@
+'Założenia - makro weryfikuje poprawność danych (sume kwot w dwóch różnych kolumnach oraz misiąc z dwóch różnych źródeł) w wybranych przez użytkownika plikach .xls
+
+Sub ctrl_wybranych_wartosci_w_plikach()
+
+    Dim rrrr, x As Variant
+    rrrr = Year(DateTime.Now)
+
+    MsgBox "Wybierz pliki RM, które mam sprawdzić"
+
+    ChDrive "W"
+    ChDir "W:\1000_DSA\" & rrrr & "\PLIKI_IMPORTOWE\RM"
+
+    A = Application.GetOpenFilename(MultiSelect:=True)
+
+    Dim Wb As Workbook
+
+    Application.DisplayAlerts = True
+    Application.ScreenUpdating = False
+
+On Error GoTo anuluj
+
+For i = 1 To UBound(A)
+
+        Set Wb = Workbooks.Open(A(i), ReadOnly:=True)
+
+        'długość = Wb.Worksheets("DSA").Range("A1000000").End(xlUp).Row
+        'szerokość = Wb.Worksheets("DSA").Range("A1").End(xlToRight).Column
+
+        d = Wb.Worksheets("A1").Range("A1000000").End(xlUp).Row
+
+        ctrl_kwota = Round(Application.WorksheetFunction.Sum(Wb.Worksheets("A1").Columns("G:G")), 2)
+        ctrl_kwota2 = Round(Application.WorksheetFunction.Sum(Wb.Worksheets("A1").Columns("K:K")), 2)
+
+        If ctrl_kwota <> 0 Or ctrl_kwota2 <> 0 Then
+
+            MsgBox "Błędna kwota w pliku: " & Wb.Name
+
+        End If
+        
+        For c = 2 To d
+
+            data_zrodla = Wb.Worksheets("A1").Cells(c, 10)
+            data_zrodla2 = Wb.Worksheets("A1").Cells(c + 1, 10)
+            mm_ksieg = Wb.Worksheets("A1").Cells(c, 3).Value
+
+            If IsEmpty(data_zrodla) Or IsEmpty(data_zrodla2) Or IsEmpty(mm_ksieg) Then
+
+                GoTo next_plik
+
+            End If
+           
+            'If data_zrodla * 1 <> data_zrodla2 * 1 Then
+            
+                'MsgBox "Błąd daty źródła w pliku: " & Wb.Name
+                
+            'End If
+
+            If mm_ksieg * 1 <> Left(data_zrodla, 6) * 1 Then
+
+                MsgBox "Niezgodność miesiąca księgowego z datą zródła w pliku: " & Wb.Name
+
+            End If
+
+            If mm_ksieg * 1 < Left(data_zrodla, 6) * 1 Then
+
+                MsgBox "Niezgodność miesiąca księgowego z datą transakcji w pliku: " & Wb.Name
+
+            End If
+
+        Next
+
+        'For c = 2 To d
+
+         '   If WorksheetFunction.IsEven(c) = True Then 'tylko dla parzystych wierszy  
+         
+          '          If Wb.Worksheets("A1").Cells(c, 7).Value <> Wb.Worksheets("A1").Cells(c + 1, 7).Value * -1 Or _
+           '         Wb.Worksheets("A1").Cells(c, 11).Value <> Wb.Worksheets("A1").Cells(c + 1, 11).Value * -1 Or _
+            '        ctrl_kwota <> 0 Or ctrl_kwota2 <> 0 Or ctrl_kwota <> ctrl_kwota2 Or Wb.Worksheets("A1").Cells(c, 7).Value = "" Or Wb.Worksheets("A1").Cells(c + 1, 7).Value = "" _
+             '       Or Wb.Worksheets("A1").Cells(c, 11).Value = "" Or Wb.Worksheets("A1").Cells(c + 1, 11).Value = "" Then   
+             
+              '      MsgBox "Błędna kwota w pliku: " & Wb.Name
+               '     GoTo omin   
+
+                '    End If
+                
+            'End If
+
+        'Next
+
+'omin:
+
+next_plik:
+
+     Wb.Close SaveChanges:=False
+
+Next
+
+MsgBox "Koniec"
+
+
+Exit Sub
+
+anuluj:
+
+    'MsgBox "Polecenie przerwane", vbCritical, "ERROR"
+
+End Sub
